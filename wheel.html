@@ -274,7 +274,6 @@ button{
 <div class="result" id="resultBox">
   <div class="panel">🎯 النتيجة: <span id="resultText"></span></div>
 </div>
-
 <script>
 let angle=0,canSpin=false;
 const prizes=[0,100,150,250,0,500,650,700];
@@ -291,18 +290,29 @@ async function showResult(){
   const slice=360/prizes.length;
   const i=Math.floor(((360-(angle%360)+270)%360)/slice);
   const win=prizes[i];
-  resultText.innerText=win?win+" دج":"خسرت ❌";
+
+  resultText.innerText = win ? win+" دج" : "خسرت ❌";
   resultBox.classList.add("show");
-  if(win>0 && window.userRef){
-    realBalance+=win;
-    await updateDoc(userRef,{balance:realBalance});
-    balance.innerText=realBalance;
+
+  // 🔥 الزبدة الحقيقية
+  if(win > 0 && window.userRef){
+    await window.updateDoc(window.userRef,{
+      balance: window.increment(win)
+    });
+
+    const snap = await window.getDoc(window.userRef);
+    window.realBalance = snap.data().balance || 0;
+    balance.innerText = window.realBalance;
   }
+
   setTimeout(()=>resultBox.classList.remove("show"),3000);
 }
 </script>
 
 <script type="module">
+window.updateDoc = updateDoc;
+window.increment = increment;
+window.getDoc = getDoc;
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,updateDoc,increment} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -316,15 +326,23 @@ const auth=getAuth(app);
 const db=getFirestore(app);
 
 window.userRef=null;
-window.realBalance=0;
+window.realBalance = 0;
 
-onAuthStateChanged(auth,async u=>{
-  if(!u)return;
-  userRef=doc(db,"users",u.uid);
-  const s=await getDoc(userRef);
-  if(s.exists()) realBalance=s.data().balance||0;
-  else await setDoc(userRef,{balance:0,usedCodes:{}});
-  balance.innerText=realBalance;
+
+onAuthStateChanged(auth, async u => {
+  if (!u) return;
+
+  userRef = doc(db, "users", u.uid);
+  const s = await getDoc(userRef);
+
+  if (s.exists()) {
+    window.realBalance = s.data().balance || 0;
+  } else {
+    window.realBalance = 0;
+    await setDoc(userRef, { balance: 0, usedCodes: {} });
+  }
+
+  balance.innerText = window.realBalance;
 });
 
 window.checkCode=async ()=>{
