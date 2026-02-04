@@ -3,12 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-document.getElementById("copyLinkBtn").onclick=()=>{
- navigator.clipboard.writeText(
-   "https://clinquant-maamoul-c2b5f5.netlify.app?ref=UY1KM1"
- );
- showSuccess();
-};
+<title>👥 ITALIACCIAI - دعوة الفريق</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
 <style>
 body{
@@ -35,35 +31,17 @@ body{
   padding:30px;
   border-radius:18px;
   box-shadow:0 0 35px #FFD70033;
-  animation:fadeIn 1s ease;
 }
-
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(30px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* ===== Invite Code ===== */
 
 .codeBox{
   font-size:28px;
   letter-spacing:4px;
-  color:#FFD700;
   margin:20px 0;
   padding:18px;
   background:#332200;
   border-radius:12px;
   border:2px dashed #FFD700;
-  box-shadow:0 0 25px #FFD70055;
-  animation:pulse 2s infinite;
 }
-
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 15px #FFD70055}
-  50%{box-shadow:0 0 30px #FFEA00aa}
-}
-
-/* ===== Buttons ===== */
 
 .btn{
   background:linear-gradient(145deg,#FFD700,#FFEA00);
@@ -75,70 +53,12 @@ body{
   font-weight:bold;
   margin:6px;
   font-size:16px;
-  transition:.25s;
 }
-
-.btn i{margin-left:6px}
-
-.btn:hover{
-  transform:scale(1.08);
-  box-shadow:0 0 18px #FFD700aa;
-}
-
-/* ===== Progress ===== */
-
-.progressBox{
-  margin:25px 0;
-}
-
-.progressBarBg{
-  background:#332200;
-  border-radius:20px;
-  height:18px;
-  overflow:hidden;
-}
-
-.progressBar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#FFD700,#FFEA00);
-  transition:.6s;
-}
-
-/* ===== Levels ===== */
-
-.levels{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:12px;
-  margin-top:20px;
-}
-
-.levelCard{
-  background:#4d3300;
-  padding:14px;
-  border-radius:14px;
-  box-shadow:0 0 18px #FFD70022;
-  transition:.3s;
-}
-
-.levelCard:hover{
-  transform:translateY(-6px) scale(1.05);
-  box-shadow:0 0 30px #FFD70066;
-}
-
-.levelCard h4{
-  margin:5px 0;
-  color:#FFD700;
-}
-
-/* ===== Success ===== */
 
 .success{
   color:#00ff99;
   margin-top:10px;
   display:none;
-  font-size:17px;
 }
 </style>
 </head>
@@ -148,7 +68,6 @@ body{
 <div class="header">👥 ITALIACCIAI - دعوة الفريق</div>
 
 <div class="container">
-
   <p>رمز الدعوة الخاص بك:</p>
   <div class="codeBox" id="inviteCode">---</div>
 
@@ -161,58 +80,17 @@ body{
   </button>
 
   <p class="success" id="successText">✅ تم النسخ بنجاح</p>
-
-  <!-- Progress -->
-  <div class="progressBox">
-    <p>تقدم فريقك</p>
-    <div class="progressBarBg">
-      <div class="progressBar" id="progressBar"></div>
-    </div>
-    <p id="joinedCount">عدد المنضمين: 0</p>
-  </div>
-
-  <!-- Levels -->
-  <h3>⭐ مستويات الأرباح</h3>
-
-  <div class="levels">
-    <div class="levelCard">
-      <h4>المستوى 1</h4>
-      <p>1000 دج</p>
-    </div>
-    <div class="levelCard">
-      <h4>المستوى 2</h4>
-      <p>2200 دج</p>
-    </div>
-    <div class="levelCard">
-      <h4>المستوى 3</h4>
-      <p>3400 دج</p>
-    </div>
-    <div class="levelCard">
-      <h4>المستوى 4</h4>
-      <p>4600 دج</p>
-    </div>
-    <div class="levelCard">
-      <h4>المستوى 5</h4>
-      <p>6000 دج</p>
-    </div>
-  </div>
-
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,doc,getDoc,updateDoc,query,where,onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,doc,getDoc,updateDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-// 🔹 ضع هنا Firebase تاعك
 const firebaseConfig = {
   apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",
   authDomain: "aple-21978.firebaseapp.com",
-  projectId: "aple-21978",
-  storageBucket: "aple-21978.firebasestorage.app",
-  messagingSenderId: "1013598113300",
-  appId: "1:1013598113300:web:5e71138b4e75e2a2752101"
+  projectId: "aple-21978"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -229,44 +107,33 @@ function generateInviteCode(len=6){
 }
 
 onAuthStateChanged(auth,async user=>{
- if(!user){location.href="login.html";return;}
+ if(!user) return;
 
  const ref=doc(db,"users",user.uid);
  const snap=await getDoc(ref);
 
  if(snap.exists()){
-   const data=snap.data();
-   if(!data.inviteCode){
-     inviteCodeValue=generateInviteCode();
-     await updateDoc(ref,{inviteCode:inviteCodeValue});
-   }else inviteCodeValue=data.inviteCode;
-
-   document.getElementById("inviteCode").textContent=inviteCodeValue;
-
-   const q=query(collection(db,"users"),where("joinedBy","==",inviteCodeValue));
-   onSnapshot(q,s=>{
-     document.getElementById("joinedCount").textContent="عدد المنضمين: "+s.size;
-     const percent=Math.min((s.size/20)*100,100);
-     document.getElementById("progressBar").style.width=percent+"%";
-   });
+   inviteCodeValue = snap.data().inviteCode || generateInviteCode();
+   await updateDoc(ref,{inviteCode:inviteCodeValue});
+   inviteCode.textContent = inviteCodeValue;
  }
 });
 
-document.getElementById("copyCodeBtn").onclick=()=>{
+copyCodeBtn.onclick=()=>{
  navigator.clipboard.writeText(inviteCodeValue);
  showSuccess();
 };
 
-document.getElementById("copyLinkBtn").onclick=()=>{
+copyLinkBtn.onclick=()=>{
  navigator.clipboard.writeText(
-   "https://clinquant-maamoul-c2b5f5.netlify.app?ref="+inviteCodeValue
+   "https://project-lb2i.onrender.com?ref=" + inviteCodeValue
  );
  showSuccess();
 };
 
 function showSuccess(){
- document.getElementById("successText").style.display="block";
- setTimeout(()=>document.getElementById("successText").style.display="none",2000);
+ successText.style.display="block";
+ setTimeout(()=>successText.style.display="none",2000);
 }
 </script>
 
