@@ -56,7 +56,7 @@ button{
 <body>
 
 <div class="box">
-  <h2>🔐 ITALIACCIAI </h2>
+  <h2>🔐 ITALIACCIAI</h2>
 
   <input id="phone" placeholder="رقم الهاتف">
   <input id="password" type="password" placeholder="كلمة السر">
@@ -75,7 +75,7 @@ from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, collection, query, where, getDocs } 
 from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* 🔥 Firebase تاعك */
+/* 🔥 Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",
   authDomain: "aple-21978.firebaseapp.com",
@@ -90,16 +90,23 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const errorEl = document.getElementById("error");
 
-/* 📱 تحويل الهاتف إلى إيميل وهمي */
+/* 📱 تحويل الهاتف لإيميل */
 function phoneToEmail(phone){
   return phone + "@total.fake";
 }
 
-/* 🔒 توليد Device ID */
+/* 🔒 Device ID */
 let deviceId = localStorage.getItem("deviceId");
 if(!deviceId){
   deviceId = crypto.randomUUID();
   localStorage.setItem("deviceId", deviceId);
+}
+
+/* ⭐⭐⭐ جلب رمز الدعوة من الرابط ⭐⭐⭐ */
+const params = new URLSearchParams(window.location.search);
+const refCode = params.get("ref");
+if(refCode){
+  document.getElementById("invite").value = refCode;
 }
 
 /* ✅ إنشاء حساب */
@@ -116,19 +123,16 @@ window.signup = async () => {
 
     let joinedBy = null;
 
-    /* 🧠 تحقق من رمز الدعوة إذا دخل */
     if(inviteInput){
       const q = query(
         collection(db,"users"),
         where("inviteCode","==",inviteInput)
       );
       const snap = await getDocs(q);
-
       if(snap.empty){
         errorEl.textContent="❌ رمز الدعوة غير صحيح";
         return;
       }
-
       joinedBy = inviteInput;
     }
 
@@ -137,10 +141,10 @@ window.signup = async () => {
 
     await setDoc(doc(db,"users",cred.user.uid),{
       phone,
-      joinedBy,          // null أو رمز صحيح
+      joinedBy,
       balance: 0,
       level: 0,
-      deviceId,          // 🔒 حماية
+      deviceId,
       createdAt: Date.now()
     });
 
