@@ -38,25 +38,57 @@ body{
 .task.done{opacity:.5;cursor:not-allowed;}
 .task.locked{opacity:.3;cursor:not-allowed;}
 .task i{font-size:40px;margin-top:10px;}
+.message{text-align:center;margin:15px;color:#00ffcc}
+
+.progress{
+  width:80%;
+  height:12px;
+  background:#333;
+  border-radius:10px;
+  margin:10px auto;
+  overflow:hidden;
+}
+.bar{
+  height:100%;
+  width:0%;
+  background:#00ffcc;
+  transition:.3s;
+}
+
 #screen{
   position:fixed;inset:0;background:#000;
   display:none;flex-direction:column;
   justify-content:center;align-items:center;z-index:999;
 }
-#timer{font-size:30px;margin-top:15px;}
-.message{text-align:center;margin:20px;font-size:18px;color:#00ffcc;}
+#timer{font-size:26px;margin-top:10px}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div id="level">Lv 1</div>
+  <div id="level">Lv 0</div>
   <div>ITALIACCIAI</div>
   <div id="balance">0 دج</div>
 </div>
 
-<div id="msg" class="message"></div>
+<a id="upgradeBtn"
+   href="https://t.me/+NmqSEI6ysDozNGQ0"
+   target="_blank"
+   style="
+     display:none;
+     padding:12px 22px;
+     border-radius:12px;
+     background:#0088cc;
+     color:#fff;
+     font-size:16px;
+     text-decoration:none;
+     margin:10px auto 20px;
+     width:fit-content;
+   ">
+🚀 طلب ترقية عبر تلغرام
+</a>
+<div class="progress"><div class="bar" id="bar"></div></div>
 <div class="container" id="tasks"></div>
 
 <div id="screen">
@@ -70,7 +102,6 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, doc, getDoc, setDoc, updateDoc }
 from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",
   authDomain: "aple-21978.firebaseapp.com",
@@ -84,32 +115,24 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* عناصر */
 const tasksEl = document.getElementById("tasks");
 const balanceEl = document.getElementById("balance");
 const levelEl = document.getElementById("level");
 const msgEl = document.getElementById("msg");
+const barEl = document.getElementById("bar");
 const screen = document.getElementById("screen");
-const videoEl = document.getElementById("video");
 const timerEl = document.getElementById("timer");
+const videoEl = document.getElementById("video");
 
-/* فيديوهات */
-const videos = [
-  "obm6Dfq3gM4",
-  "V9Lqm71zpD8",
-  "LotjIdwJuao",
-  "NieWgAfbZE8",
-  "OUq9fOA8fKM"
-];
-
+const videos = ["obm6Dfq3gM4","V9Lqm71zpD8","LotjIdwJuao","NieWgAfbZE8","OUq9fOA8fKM"];
 const TASK_TIME = 20;
-const RESET_AFTER = 24 * 60 * 60 * 1000;
 
 let user, ref, locked=false;
 
-/* 💰 حساب ربح اليوم حسب المستوى */
-function getDailyReward(level){
+/* ربح اليوم حسب المستوى */
+function dailyReward(level){
   switch(level){
+    case 0: return 100;
     case 1: return 100;
     case 2: return 230;
     case 3: return 480;
@@ -121,7 +144,18 @@ function getDailyReward(level){
   }
 }
 
-/* تحميل المستخدم */
+/* مدة الصلاحية */
+function validityDays(level){
+  return level === 0 ? 3 : 90;
+}
+
+/* منتصف الليل القادم */
+function nextMidnight(){
+  const d = new Date();
+  d.setHours(24,0,0,0);
+  return d.getTime();
+}
+
 onAuthStateChanged(auth, async(u)=>{
   if(!u){ location.href="login.html"; return; }
 
@@ -131,20 +165,24 @@ onAuthStateChanged(auth, async(u)=>{
   if(!snap.exists()){
     user = {
       balance:0,
-      level:1,
+      level:0,
       done:[],
-      lastFinish:0
+      lastFinish:0,
+      startDate:Date.now()
     };
     await setDoc(ref,user);
   }else{
-    const d = snap.data();
-    user = {
-      balance:Number(d.balance)||0,
-      level:Number(d.level)||1,
-      done:Array.isArray(d.done)?d.done:[],
-      lastFinish:Number(d.lastFinish)||0
-    };
+    user = snap.data();
   }
+
+  if(Date.now() > user.startDate + validityDays(user.level)*86400000){
+  locked = true;
+  msgEl.textContent = "⛔ انتهت مدة الاستفادة للمستوى 0";
+  document.getElementById("upgradeBtn").style.display = "block";
+  render();
+tasksEl.innerHTML = "";
+return;
+}
 
   checkReset();
   updateUI();
@@ -152,78 +190,71 @@ onAuthStateChanged(auth, async(u)=>{
   startCountdown();
 });
 
-/* تحقق 24 ساعة */
 function checkReset(){
   locked = false;
-
   if(user.done.length === 5){
     if(!user.lastFinish){
-      user.lastFinish = Date.now();
-      updateDoc(ref,{ lastFinish:user.lastFinish });
+      user.lastFinish = nextMidnight();
+      updateDoc(ref,{lastFinish:user.lastFinish});
     }
-
-    if(Date.now() - user.lastFinish < RESET_AFTER){
+    if(Date.now() < user.lastFinish){
       locked = true;
     }else{
-      user.done = [];
-      user.lastFinish = 0;
-      updateDoc(ref,{ done:[], lastFinish:0 });
+      user.done=[];
+      user.lastFinish=0;
+      updateDoc(ref,{done:[],lastFinish:0});
     }
   }
 }
 
-/* عرض المهام */
 function render(){
   tasksEl.innerHTML="";
   for(let i=0;i<5;i++){
     const done = user.done.includes(i);
-    const div = document.createElement("div");
-    div.className = "task";
-    if(done) div.classList.add("done");
-    if(locked) div.classList.add("locked");
-
-    div.innerHTML = `
-      <div>مهمة ${i+1}</div>
-      <i class="fa-solid ${done?"fa-circle-check":locked?"fa-lock":"fa-circle-play"}"></i>
-    `;
-
-    if(!done && !locked){
-      div.onclick = ()=>startTask(i);
-    }
-    tasksEl.appendChild(div);
+    const d=document.createElement("div");
+    d.className="task";
+    if(done) d.classList.add("done");
+    if(locked) d.classList.add("locked");
+    d.innerHTML=`مهمة ${i+1}<br><i class="fa-solid ${done?"fa-circle-check":"fa-circle-play"}"></i>`;
+    if(!done && !locked) d.onclick=()=>startTask(i);
+    tasksEl.appendChild(d);
   }
+  barEl.style.width = (user.done.length/5*100)+"%";
 }
 
-/* بدء المهمة */
 function startTask(i){
   screen.style.display="flex";
-  videoEl.innerHTML=`
-    <iframe width="90%" height="260"
-    src="https://www.youtube-nocookie.com/embed/${videos[i]}?autoplay=1"
-    allow="autoplay" allowfullscreen></iframe>`;
+  videoEl.innerHTML=`<iframe width="90%" height="260"
+  src="https://www.youtube-nocookie.com/embed/${videos[i]}?autoplay=1"
+  allow="autoplay"></iframe>`;
 
   let t=TASK_TIME;
   timerEl.textContent=t;
 
-  const interval = setInterval(async()=>{
+  const iv=setInterval(async()=>{
     t--; timerEl.textContent=t;
+
     if(t<=0){
-      clearInterval(interval);
+      clearInterval(iv);
       screen.style.display="none";
 
+      // تسجيل المهمة
       user.done.push(i);
 
-      const daily = getDailyReward(user.level);
-      user.balance += daily / 5;
+      // ➕ إضافة الرصيد (كيف كان)
+      const daily = dailyReward(user.level); // ربح اليوم
+      const taskGain = daily / 5;            // ربح مهمة واحدة
+      user.balance += taskGain;
 
+      // إذا كمل 5 مهام
       if(user.done.length === 5){
-        user.lastFinish = Date.now();
+        user.lastFinish = nextMidnight();
       }
 
       await updateDoc(ref,{
-        balance:user.balance,
-        done:user.done,
-        lastFinish:user.lastFinish
+        balance: user.balance,
+        done: user.done,
+        lastFinish: user.lastFinish
       });
 
       updateUI();
@@ -232,28 +263,24 @@ function startTask(i){
   },1000);
 }
 
-/* عداد الوقت */
 function startCountdown(){
   setInterval(()=>{
     if(!locked){
-      msgEl.textContent = "✅ المهام مفتوحة";
+      msgEl.textContent="✅ المهام مفتوحة";
       return;
     }
-
-    const left = (user.lastFinish + RESET_AFTER) - Date.now();
-    if(left <= 0){ location.reload(); return; }
-
+    const left = user.lastFinish - Date.now();
+    if(left<=0) location.reload();
     const h=Math.floor(left/3600000);
     const m=Math.floor((left%3600000)/60000);
     const s=Math.floor((left%60000)/1000);
-
-    msgEl.textContent = `⏳ تفتح المهام بعد ${h}س ${m}د ${s}ث`;
+    msgEl.textContent=`⏳ تفتح المهام منتصف الليل بعد ${h}س ${m}د ${s}ث`;
   },1000);
 }
 
 function updateUI(){
-  balanceEl.textContent = user.balance + " دج";
-  levelEl.textContent = "Lv " + user.level;
+  balanceEl.textContent=user.balance+" دج";
+  levelEl.textContent="Lv "+user.level;
 }
 </script>
 
