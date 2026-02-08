@@ -8,58 +8,17 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#000;
-  color:#ffd700;
-}
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px 20px;
-  border-bottom:1px solid #ffd70055;
-}
-.container{
-  padding:20px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:20px;
-}
-.task{
-  background:#1a1400;
-  padding:20px;
-  border-radius:15px;
-  border:2px solid #ffd70055;
-  text-align:center;
-  cursor:pointer;
-}
-.task.done{opacity:.5;cursor:not-allowed;}
-.task.locked{opacity:.3;cursor:not-allowed;}
-.task i{font-size:40px;margin-top:10px;}
+body{margin:0;font-family:Arial;background:#000;color:#ffd700}
+.header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid #ffd70055}
+.container{padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.task{background:#1a1400;padding:20px;border-radius:15px;border:2px solid #ffd70055;text-align:center;cursor:pointer}
+.task.done{opacity:.5;cursor:not-allowed}
+.task.locked{opacity:.3;cursor:not-allowed}
+.task i{font-size:40px;margin-top:10px}
 .message{text-align:center;margin:15px;color:#00ffcc}
-
-.progress{
-  width:80%;
-  height:12px;
-  background:#333;
-  border-radius:10px;
-  margin:10px auto;
-  overflow:hidden;
-}
-.bar{
-  height:100%;
-  width:0%;
-  background:#00ffcc;
-  transition:.3s;
-}
-
-#screen{
-  position:fixed;inset:0;background:#000;
-  display:none;flex-direction:column;
-  justify-content:center;align-items:center;z-index:999;
-}
+.progress{width:80%;height:12px;background:#333;border-radius:10px;margin:10px auto;overflow:hidden}
+.bar{height:100%;width:0%;background:#00ffcc;transition:.3s}
+#screen{position:fixed;inset:0;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center;z-index:999}
 #timer{font-size:26px;margin-top:10px}
 </style>
 </head>
@@ -72,22 +31,15 @@ body{
   <div id="balance">0 دج</div>
 </div>
 
+<div id="msg" class="message"></div>
+
 <a id="upgradeBtn"
-   href="https://t.me/+NmqSEI6ysDozNGQ0"
-   target="_blank"
-   style="
-     display:none;
-     padding:12px 22px;
-     border-radius:12px;
-     background:#0088cc;
-     color:#fff;
-     font-size:16px;
-     text-decoration:none;
-     margin:10px auto 20px;
-     width:fit-content;
-   ">
-🚀 طلب ترقية عبر تلغرام
+href="https://t.me/+NmqSEI6ysDozNGQ0"
+target="_blank"
+style="display:none;padding:12px 22px;border-radius:12px;background:#0088cc;color:#fff;font-size:16px;text-decoration:none;margin:10px auto 20px;width:fit-content">
+🚀 طلب ترقية
 </a>
+
 <div class="progress"><div class="bar" id="bar"></div></div>
 <div class="container" id="tasks"></div>
 
@@ -99,7 +51,7 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc }
+import { getFirestore, doc, getDoc, setDoc, updateDoc } 
 from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -127,9 +79,9 @@ const videoEl = document.getElementById("video");
 const videos = ["obm6Dfq3gM4","V9Lqm71zpD8","LotjIdwJuao","NieWgAfbZE8","OUq9fOA8fKM"];
 const TASK_TIME = 20;
 
-let user, ref, locked=false;
+let user, ref, locked = false;
 
-/* ربح اليوم حسب المستوى */
+/* ربح اليوم */
 function dailyReward(level){
   switch(level){
     case 0: return 100;
@@ -144,12 +96,6 @@ function dailyReward(level){
   }
 }
 
-/* مدة الصلاحية */
-function validityDays(level){
-  return level === 0 ? 3 : 90;
-}
-
-/* منتصف الليل القادم */
 function nextMidnight(){
   const d = new Date();
   d.setHours(24,0,0,0);
@@ -175,43 +121,28 @@ onAuthStateChanged(auth, async(u)=>{
     user = snap.data();
   }
 
-  if(Date.now() > user.startDate + validityDays(user.level)*86400000){
-  locked = true;
-  msgEl.textContent = "⛔ انتهت مدة الاستفادة للمستوى 0";
-  document.getElementById("upgradeBtn").style.display = "block";
-  render();
-tasksEl.innerHTML = "";
-return;
-}
+  const daysPassed = Math.floor((Date.now() - user.startDate) / 86400000);
 
-  checkReset();
+  if(user.level === 0 && daysPassed >= 3){
+    locked = true;
+    msgEl.textContent = "⛔ انتهت المهام المجانية (3 أيام)";
+    document.getElementById("upgradeBtn").style.display = "block";
+    tasksEl.innerHTML = "";
+    updateUI();
+    return;
+  }
+
+  if(!Array.isArray(user.done)) user.done = [];
+
   updateUI();
   render();
-  startCountdown();
 });
-
-function checkReset(){
-  locked = false;
-  if(user.done.length === 5){
-    if(!user.lastFinish){
-      user.lastFinish = nextMidnight();
-      updateDoc(ref,{lastFinish:user.lastFinish});
-    }
-    if(Date.now() < user.lastFinish){
-      locked = true;
-    }else{
-      user.done=[];
-      user.lastFinish=0;
-      updateDoc(ref,{done:[],lastFinish:0});
-    }
-  }
-}
 
 function render(){
   tasksEl.innerHTML="";
   for(let i=0;i<5;i++){
     const done = user.done.includes(i);
-    const d=document.createElement("div");
+    const d = document.createElement("div");
     d.className="task";
     if(done) d.classList.add("done");
     if(locked) d.classList.add("locked");
@@ -228,59 +159,29 @@ function startTask(i){
   src="https://www.youtube-nocookie.com/embed/${videos[i]}?autoplay=1"
   allow="autoplay"></iframe>`;
 
-  let t=TASK_TIME;
-  timerEl.textContent=t;
+  let t = TASK_TIME;
+  timerEl.textContent = t;
 
-  const iv=setInterval(async()=>{
+  const iv = setInterval(async()=>{
     t--; timerEl.textContent=t;
-
     if(t<=0){
       clearInterval(iv);
       screen.style.display="none";
-
-      // تسجيل المهمة
       user.done.push(i);
-
-      // ➕ إضافة الرصيد (كيف كان)
-      const daily = dailyReward(user.level); // ربح اليوم
-      const taskGain = daily / 5;            // ربح مهمة واحدة
-      user.balance += taskGain;
-
-      // إذا كمل 5 مهام
-      if(user.done.length === 5){
-        user.lastFinish = nextMidnight();
-      }
-
+      user.balance += dailyReward(user.level)/5;
       await updateDoc(ref,{
-        balance: user.balance,
-        done: user.done,
-        lastFinish: user.lastFinish
+        balance:user.balance,
+        done:user.done
       });
-
       updateUI();
       render();
     }
   },1000);
 }
 
-function startCountdown(){
-  setInterval(()=>{
-    if(!locked){
-      msgEl.textContent="✅ المهام مفتوحة";
-      return;
-    }
-    const left = user.lastFinish - Date.now();
-    if(left<=0) location.reload();
-    const h=Math.floor(left/3600000);
-    const m=Math.floor((left%3600000)/60000);
-    const s=Math.floor((left%60000)/1000);
-    msgEl.textContent=`⏳ تفتح المهام منتصف الليل بعد ${h}س ${m}د ${s}ث`;
-  },1000);
-}
-
 function updateUI(){
-  balanceEl.textContent=user.balance+" دج";
-  levelEl.textContent="Lv "+user.level;
+  balanceEl.textContent = user.balance+" دج";
+  levelEl.textContent = "Lv "+user.level;
 }
 </script>
 
