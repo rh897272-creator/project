@@ -1,164 +1,217 @@
-<!DOCTYPE html>  <html lang="ar">  
-<head>  
-<meta charset="UTF-8">  
-<title>🎁 هدية يومية</title>  <style>  
-body{  
-  margin:0;  
-  background:#000;  
-  color:#fff;  
-  font-family:Arial;  
-  text-align:center;  
-}  
-.header-img{  
-  width:100%;  
-  max-height:260px;  
-  object-fit:cover;  
-}  
-.box{  
-  margin:20px auto;  
-  padding:30px;  
-  width:85%;  
-  max-width:360px;  
-  background:#111;  
-  border-radius:25px;  
-  border:2px solid gold;  
-  box-shadow:0 0 25px rgba(255,215,0,.4);  
-}  
-.title{  
-  font-size:24px;  
-  color:gold;  
-  margin-bottom:10px;  
-}  
-.status{  
-  color:#0f0;  
-  margin-bottom:15px;  
-}  
-.amount{  
-  font-size:42px;  
-  color:gold;  
-  margin:20px 0;  
-}  
-button{  
-  background:gold;  
-  color:#000;  
-  border:none;  
-  padding:15px 35px;  
-  font-size:18px;  
-  border-radius:30px;  
-}  
-button:disabled{  
-  background:#555;  
-  color:#aaa;  
-}  
-</style>  </head>  <body>  <img class="header-img" src="https://i.postimg.cc/qBGsVHG1/1-5-10.jpg">  <div class="box">  
-  <div class="title">🎁 هدية يومية</div>  
-  <div id="status" class="status">تحميل...</div>  
-  <div id="amount" class="amount">— دج</div>  
-  <button id="btn" disabled>احصل على الهدية</button>  
-</div>  <script type="module">  
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";  
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";  
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";  
-  
-const firebaseConfig = {  
-  apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",  
-  authDomain: "aple-21978.firebaseapp.com",  
-  projectId: "aple-21978",  
-  storageBucket: "aple-21978.appspot.com",  
-  messagingSenderId: "1013598113300",  
-  appId: "1:1013598113300:web:5e71138b4e75e2a2752101"  
-};  
-  
-const app = initializeApp(firebaseConfig);  
-const auth = getAuth(app);  
-const db = getFirestore(app);  
-  
-const gifts = [10,15,20,25,35,40,50,60,70,90,100];  
-const DAY = 86400000;  
-  
-const statusDiv = document.getElementById("status");  
-const amountDiv = document.getElementById("amount");  
-const btn = document.getElementById("btn");  
-  
-signInAnonymously(auth);  
-  
-onAuthStateChanged(auth, async (user)=>{  
-  if(!user) return;  
-  
-  const ref = doc(db,"users",user.uid);  
-  const snap = await getDoc(ref);  
-  
-  if(!snap.exists()){  
-    await setDoc(ref,{  
-      balance: 0,  
-      lastGift: 0  
-    });  
-  }  
-  
-  load(ref);  
-});  
-  
-async function load(ref){  
-  const snap = await getDoc(ref);  
-  const data = snap.data();  
-  
-  const balance = Number(data.balance) || 0;  
-  const lastGift = Number(data.lastGift) || 0;  
-  
-  amountDiv.innerHTML = balance + " دج";  
-  
-  const diff = Date.now() - lastGift;  
-  
-  if(lastGift === 0 || diff >= DAY){  
-    statusDiv.innerHTML = "🎁 جاهزة";  
-    btn.disabled = false;  
-  }else{  
-    btn.disabled = true;  
-    startCountdown(DAY - diff);  
-  }  
-}  
-  
-function startCountdown(ms){  
-  updateTime(ms);  
-  const timer = setInterval(()=>{  
-    ms -= 1000;  
-    if(ms <= 0){  
-      clearInterval(timer);  
-      statusDiv.innerHTML = "🎁 جاهزة";  
-      btn.disabled = false;  
-      return;  
-    }  
-    updateTime(ms);  
-  },1000);  
-}  
-  
-function updateTime(ms){  
-  const h = Math.floor(ms / 3600000);  
-  const m = Math.floor((ms % 3600000) / 60000);  
-  const s = Math.floor((ms % 60000) / 1000);  
-  statusDiv.innerHTML = `⏳ ${h}س ${m}د ${s}ث`;  
-}  
-  
-btn.onclick = async ()=>{  
-  const user = auth.currentUser;  
-  if(!user) return;  
-  
-  const ref = doc(db,"users",user.uid);  
-  const snap = await getDoc(ref);  
-  const data = snap.data();  
-  
-  if(Date.now() - Number(data.lastGift) < DAY){  
-    return;  
-  }  
-  
-  const gift = gifts[Math.floor(Math.random()*gifts.length)];  
-  
-  await updateDoc(ref,{  
-    balance: Number(data.balance) + gift,  
-    lastGift: Date.now()  
-  });  
-  
-  load(ref);  
-};  
-</script>  </body>  
-</html>  
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>رصيد يومي ثابت</title>
+
+<style>
+body{
+  margin:0;
+  background:linear-gradient(135deg,#020b1f,#041b3a);
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+
+.box{
+  margin:40px auto;
+  padding:30px;
+  width:85%;
+  max-width:380px;
+  background:linear-gradient(160deg,#061c3a,#03204f);
+  border-radius:25px;
+  border:2px solid #00ffd5;
+  box-shadow:0 0 35px rgba(0,255,213,.35);
+  position:relative;
+}
+
+/* 🎁 الهدية */
+.gift{
+  font-size:55px;
+  animation:pulse 1.8s infinite;
+  margin-bottom:10px;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+
+/* ✨ لمعة */
+.box::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:25px;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.15),transparent);
+  animation:shine 3s infinite;
+}
+
+@keyframes shine{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
+}
+
+.title{
+  font-size:26px;
+  color:#00ffd5;
+}
+
+#clock{
+  color:#ffd54f;
+  font-size:16px;
+  margin:8px 0;
+}
+
+.status{
+  margin:12px 0;
+}
+
+.amount{
+  font-size:50px;
+  color:#00ffd5;
+  margin:15px 0;
+}
+
+button{
+  background:#00ffd5;
+  color:#000;
+  border:none;
+  padding:15px 40px;
+  font-size:18px;
+  border-radius:30px;
+  cursor:pointer;
+  transition:.3s;
+}
+
+button:hover{transform:scale(1.05)}
+
+button:disabled{
+  background:#555;
+  color:#aaa;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <div class="gift">🎁</div>
+  <div class="title">رصيد يومي ثابت</div>
+  <div id="clock">⏰ --:--:--</div>
+  <div id="status" class="status">تحميل...</div>
+  <div id="amount" class="amount">0 دج</div>
+  <button id="btn" disabled>🎁 استلام 20 دج</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",
+  authDomain: "aple-21978.firebaseapp.com",
+  projectId: "aple-21978",
+  storageBucket: "aple-21978.appspot.com",
+  messagingSenderId: "1013598113300",
+  appId: "1:1013598113300:web:5e71138b4e75e2a2752101"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const GIFT = 20;
+const DAY  = 86400000;
+
+const statusDiv = document.getElementById("status");
+const amountDiv = document.getElementById("amount");
+const btn = document.getElementById("btn");
+
+signInAnonymously(auth);
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return;
+
+  const ref = doc(db,"users",user.uid);
+  const snap = await getDoc(ref);
+
+  if(!snap.exists()){
+    await setDoc(ref,{ balance:0, lastGift:0 });
+  }
+  load(ref);
+});
+
+async function load(ref){
+  const snap = await getDoc(ref);
+  const d = snap.data();
+
+  const balance = Number(d.balance)||0;
+  const lastGift = Number(d.lastGift)||0;
+
+  amountDiv.innerHTML = balance + " دج";
+
+  if(lastGift===0 || Date.now()-lastGift>=DAY){
+    statusDiv.innerHTML = "🎁 الهدية جاهزة للاستلام";
+    btn.disabled = false;
+  }else{
+    btn.disabled = true;
+    countdown(DAY-(Date.now()-lastGift));
+  }
+}
+
+function countdown(ms){
+  const t=setInterval(()=>{
+    ms-=1000;
+    if(ms<=0){
+      clearInterval(t);
+      statusDiv.innerHTML="🎁 الهدية جاهزة";
+      btn.disabled=false;
+    }else{
+      const h=Math.floor(ms/3600000);
+      const m=Math.floor(ms%3600000/60000);
+      const s=Math.floor(ms%60000/1000);
+      statusDiv.innerHTML=`⏳ ${h}س ${m}د ${s}ث`;
+    }
+  },1000);
+}
+
+btn.onclick=async()=>{
+  const u=auth.currentUser;
+  if(!u) return;
+
+  const ref=doc(db,"users",u.uid);
+  const snap=await getDoc(ref);
+  const d=snap.data();
+
+  if(Date.now()-Number(d.lastGift)<DAY) return;
+
+  await updateDoc(ref,{
+  balance:Number(d.balance)+GIFT,
+  lastGift:Date.now()
+});
+
+// 🔔 تشغيل الصوت
+document.getElementById("giftSound").play();
+
+statusDiv.innerHTML="🎉 تم استلام الهدية!";
+load(ref);
+
+  statusDiv.innerHTML="🎉 تم استلام الهدية!";
+  load(ref);
+};
+</script>
+
+<script>
+function updateClock(){
+  const n=new Date();
+  document.getElementById("clock").innerHTML=
+    `⏰ ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+}
+setInterval(updateClock,1000); updateClock();
+</script>
+
+</body><audio id="giftSound" src="https://assets.mixkit.co/active_storage/sfx/2762/2762-preview.mp3"></audio>
+</html>
