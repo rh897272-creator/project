@@ -2,58 +2,119 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<title>صفحة المهام</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ITALIACCIAI - المهام اليومية</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-body{margin:0;font-family:Arial;background:#000;color:#ffd700}
-.header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid #ffd70055}
-.container{padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
-.task{background:#1a1400;padding:20px;border-radius:15px;border:2px solid #ffd70055;text-align:center;cursor:pointer}
-.task.done{opacity:.5;cursor:not-allowed}
-.task.locked{opacity:.3;cursor:not-allowed}
-.task i{font-size:40px;margin-top:10px}
-.message{text-align:center;margin:15px;color:#00ffcc}
-.progress{width:80%;height:12px;background:#333;border-radius:10px;margin:10px auto;overflow:hidden}
-.bar{height:100%;width:0%;background:#00ffcc;transition:.3s}
-#screen{position:fixed;inset:0;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center;z-index:999}
-#timer{font-size:26px;margin-top:10px}
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0b1a33;
+  color:#fff;
+}
+.header{
+  padding:15px;
+  text-align:center;
+  background:#08142a;
+}
+.box{
+  margin:15px;
+  padding:15px;
+  background:#101f3f;
+  border-radius:12px;
+}
+.task{
+  background:#162a55;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.task button{
+  padding:6px 15px;
+  border:none;
+  border-radius:20px;
+  background:#00c853;
+  color:#fff;
+  font-weight:bold;
+}
+.task button[disabled]{background:#555;}
+#upgradeBox{text-align:center;margin:20px;}
+#upgradeBox a{
+  display:inline-block;padding:12px 30px;
+  background:#0088cc;color:#fff;border-radius:30px;
+  text-decoration:none;font-weight:bold;
+}
+.note{text-align:center;font-size:14px;opacity:.8;}
+/* الفيديو المنبثق */
+#videoModal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+}
+#videoModal .content{
+  width:90%;max-width:600px;
+  background:#08142a;border-radius:14px;padding:12px;
+  position:relative;
+}
+#videoModal button{
+  position:absolute;top:8px;left:8px;
+  width:32px;height:32px;border:none;
+  border-radius:50%;background:#c62828;
+  color:#fff;font-size:18px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div id="level">Lv 0</div>
-  <div>ITALIACCIAI</div>
-  <div id="balance">0 دج</div>
+  <div>رصيدك: <span id="balance">0</span> دج</div>
+  <div>مستواك: <span id="level">0</span></div>
 </div>
 
-<div id="msg" class="message"></div>
+<div id="upgradeBox">
+  <a href="https://t.me/USERNAME_TA3EK" target="_blank">🚀 ترقية مستواك</a>
+  <div class="note">الأرباح تبدأ من المستوى 1</div>
+</div>
 
-<a id="upgradeBtn"
-href="https://t.me/+NmqSEI6ysDozNGQ0"
-target="_blank"
-style="display:none;padding:12px 22px;border-radius:12px;background:#0088cc;color:#fff;font-size:16px;text-decoration:none;margin:10px auto 20px;width:fit-content">
-🚀 طلب ترقية
-</a>
+<div class="box">
+  <h3>📺 مهام اليوم</h3>
+  <div id="tasks"></div>
+</div>
 
-<div class="progress"><div class="bar" id="bar"></div></div>
-<div class="container" id="tasks"></div>
-
-<div id="screen">
-  <div id="video"></div>
-  <div id="timer">20</div>
+<!-- نافذة الفيديو -->
+<div id="videoModal">
+  <div class="content">
+    <button onclick="closeVideo()">×</button>
+    <iframe id="videoFrame"
+      width="100%" height="300"
+      src=""
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen
+      style="border-radius:10px;">
+    </iframe>
+    <div id="watchText" style="text-align:center;margin-top:10px;">
+      يرجى مشاهدة الفيديو
+    </div>
+  </div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } 
-from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyAa6ETi1DmEI-3nVuqjpsaodT0rXsP8bIw",
   authDomain: "aple-21978.firebaseapp.com",
@@ -65,124 +126,117 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 
-const tasksEl = document.getElementById("tasks");
+/* الإعدادات */
+const TOTAL_TASKS = 5;
+const VIDEOS = [
+  "Vb0TGoHe5L0",
+  "ji8b2Vj7z54",
+  "Nl5DpBh8Xec",
+  "5PLn2LKUQZU",
+  "UJTL1kPMFcY"
+];
+const LEVEL_EARNINGS = {
+  0:0,1:100,2:230,3:480,4:800,5:1200,6:1900,7:2500
+};
+
+/* عناصر */
 const balanceEl = document.getElementById("balance");
-const levelEl = document.getElementById("level");
-const msgEl = document.getElementById("msg");
-const barEl = document.getElementById("bar");
-const screen = document.getElementById("screen");
-const timerEl = document.getElementById("timer");
-const videoEl = document.getElementById("video");
+const levelEl   = document.getElementById("level");
+const tasksBox  = document.getElementById("tasks");
+const upgradeBox= document.getElementById("upgradeBox");
 
-const videos = ["obm6Dfq3gM4","V9Lqm71zpD8","LotjIdwJuao","NieWgAfbZE8","OUq9fOA8fKM"];
-const TASK_TIME = 20;
+function todayKey(){return new Date().toISOString().split("T")[0];}
 
-let user, ref, locked = false;
+let user, userRef, timer, secondsLeft, currentTask;
 
-/* ربح اليوم */
-function dailyReward(level){
-  switch(level){
-    case 0: return 100;
-    case 1: return 100;
-    case 2: return 230;
-    case 3: return 480;
-    case 4: return 800;
-    case 5: return 1200;
-    case 6: return 1900;
-    case 7: return 2500;
-    default: return 0;
-  }
-}
-
-function nextMidnight(){
-  const d = new Date();
-  d.setHours(24,0,0,0);
-  return d.getTime();
-}
+/* تسجيل دخول */
+signInAnonymously(auth);
 
 onAuthStateChanged(auth, async(u)=>{
-  if(!u){ location.href="login.html"; return; }
+  if(!u) return;
 
-  ref = doc(db,"users",u.uid);
-  const snap = await getDoc(ref);
+  userRef = doc(db,"users",u.uid);
+  const snap = await getDoc(userRef);
 
   if(!snap.exists()){
-    user = {
-      balance:0,
-      level:0,
-      done:[],
-      lastFinish:0,
-      startDate:Date.now()
-    };
-    await setDoc(ref,user);
-  }else{
-    user = snap.data();
+    user = { level:0,balance:0,done:[],lastDay:todayKey() };
+    await setDoc(userRef,user);
+  }else user = snap.data();
+
+  if(user.lastDay !== todayKey()){
+    user.done = [];
+    user.lastDay= todayKey();
+    await updateDoc(userRef,{done:user.done,lastDay:user.lastDay});
   }
-
-  const daysPassed = Math.floor((Date.now() - user.startDate) / 86400000);
-
-  if(user.level === 0 && daysPassed >= 3){
-    locked = true;
-    msgEl.textContent = "⛔ انتهت المهام المجانية (3 أيام)";
-    document.getElementById("upgradeBtn").style.display = "block";
-    tasksEl.innerHTML = "";
-    updateUI();
-    return;
-  }
-
-  if(!Array.isArray(user.done)) user.done = [];
 
   updateUI();
-  render();
 });
 
-function render(){
-  tasksEl.innerHTML="";
-  for(let i=0;i<5;i++){
+function updateUI(){
+  balanceEl.textContent = user.balance;
+  levelEl.textContent   = user.level;
+  upgradeBox.style.display = user.level===0?"block":"none";
+
+  tasksBox.innerHTML = "";
+  for(let i=0;i<TOTAL_TASKS;i++){
     const done = user.done.includes(i);
-    const d = document.createElement("div");
-    d.className="task";
-    if(done) d.classList.add("done");
-    if(locked) d.classList.add("locked");
-    d.innerHTML=`مهمة ${i+1}<br><i class="fa-solid ${done?"fa-circle-check":"fa-circle-play"}"></i>`;
-    if(!done && !locked) d.onclick=()=>startTask(i);
-    tasksEl.appendChild(d);
+    tasksBox.innerHTML += `
+      <div class="task">
+        <span>فيديو ${i+1}</span>
+        <button ${done?"disabled":""} onclick="startTask(${i})">
+          ${done?"تم":"مشاهدة"}
+        </button>
+      </div>`;
   }
-  barEl.style.width = (user.done.length/5*100)+"%";
 }
 
-function startTask(i){
-  screen.style.display="flex";
-  videoEl.innerHTML=`<iframe width="90%" height="260"
-  src="https://www.youtube-nocookie.com/embed/${videos[i]}?autoplay=1"
-  allow="autoplay"></iframe>`;
+/* مشاهدة فيديو */
+window.startTask = function(i){
+  if(user.done.includes(i)) return;
 
-  let t = TASK_TIME;
-  timerEl.textContent = t;
+  currentTask = i;
+  secondsLeft = 50;
 
-  const iv = setInterval(async()=>{
-    t--; timerEl.textContent=t;
-    if(t<=0){
-      clearInterval(iv);
-      screen.style.display="none";
-      user.done.push(i);
-      user.balance += dailyReward(user.level)/5;
-      await updateDoc(ref,{
-        balance:user.balance,
-        done:user.done
+  const id = VIDEOS[i];
+  document.getElementById("videoFrame").src =
+    `https://www.youtube.com/embed/${id}?autoplay=1`;
+
+  document.getElementById("videoModal").style.display="flex";
+  document.getElementById("watchText").textContent="الوقت المتبقي: 50 ثواني";
+
+  timer = setInterval(async()=>{
+    secondsLeft--;
+    document.getElementById("watchText").textContent =
+      "الوقت المتبقي: " + secondsLeft + " ثواني";
+
+    if(secondsLeft<=0){
+      clearInterval(timer);
+
+      user.done.push(currentTask);
+
+      const daily = LEVEL_EARNINGS[user.level] || 0;
+      if(user.level>0){
+        user.balance += daily/TOTAL_TASKS;
+      }
+
+      await updateDoc(userRef,{
+        done:user.done,
+        balance:user.balance
       });
+
+      closeVideo();
       updateUI();
-      render();
     }
   },1000);
-}
+};
 
-function updateUI(){
-  balanceEl.textContent = user.balance+" دج";
-  levelEl.textContent = "Lv "+user.level;
-}
+window.closeVideo = function(){
+  clearInterval(timer);
+  document.getElementById("videoFrame").src="";
+  document.getElementById("videoModal").style.display="none";
+};
 </script>
 
 </body>
